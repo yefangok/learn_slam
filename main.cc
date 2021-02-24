@@ -1,12 +1,9 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include <fmt/core.h>
 
 using namespace cv;
 using namespace std;
-
-bool Comp(const DMatch& a, const DMatch& b) {
-	return a.distance > b.distance;
-}
 
 int main(int, char**) {
     cv::Mat img1 = cv::imread("../1.png");
@@ -24,11 +21,16 @@ int main(int, char**) {
     auto bf = cv::BFMatcher::create();
     std::vector<DMatch> matches;
     bf->match(img_desc1,img_desc2,matches);
-    sort(matches.begin(),matches.end(),Comp);
+    sort(matches.begin(),matches.end());
     std::vector<DMatch> matches2(matches.begin(),matches.begin()+30);
-    cv::Mat output_img;
-    cv::drawMatches(img11,keypoints_1,img22,keypoints_2,matches2,output_img);
+    Mat output_img;
+    cv::drawMatches(img11,keypoints_1,img22,keypoints_2,matches2,output_img, 
+                        Scalar_<double>::all(-1), Scalar_<double>::all(-1),std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
     cv::imshow("fuck",output_img);
     std::cout<<matches2.size()<<std::endl;
+    for(const auto& mm:matches2)
+    {
+        std::cout<<mm.distance<<std::endl;
+    }
     cv::waitKey(0);
 }
