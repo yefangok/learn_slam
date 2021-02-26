@@ -43,12 +43,14 @@ int main(int, char**) {
     match_keypoint();
     g2o::SparseOptimizer optimizer;
         // 使用Cholmod中的线性方程求解器
-    g2o::BlockSolver_6_3::LinearSolverType* linearSolver = new  g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType> ();
+    //g2o::BlockSolver_6_3::LinearSolverType* linearSolver = new  g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType> ();
+    auto linearSolver = std::make_unique<g2o::LinearSolverCholmod<g2o::BlockSolver_6_3::PoseMatrixType>>();
     // 6*3 的参数
-    g2o::BlockSolver_6_3* block_solver = new g2o::BlockSolver_6_3( linearSolver );
+    //g2o::BlockSolver_6_3* block_solver = new g2o::BlockSolver_6_3( linearSolver );
+    auto block_solver = std::make_unique<g2o::BlockSolver_6_3>(std::move(linearSolver));
     // L-M 下降 
-    g2o::OptimizationAlgorithmLevenberg* algorithm = new g2o::OptimizationAlgorithmLevenberg( block_solver );
+    g2o::OptimizationAlgorithmLevenberg* algorithm = new g2o::OptimizationAlgorithmLevenberg(std::move(block_solver));
     
-    optimizer.setAlgorithm( algorithm );
-    optimizer.setVerbose( false );
+    optimizer.setAlgorithm(algorithm);
+    optimizer.setVerbose(false);
 }

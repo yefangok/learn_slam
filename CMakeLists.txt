@@ -21,8 +21,12 @@ find_package (Python COMPONENTS Interpreter)
 find_package(pybind11)
 #find_package(fmt CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
-find_package(OpenCV 3 CONFIG REQUIRED)
+find_package(OpenCV CONFIG REQUIRED)
 find_package(g2o REQUIRED)
 
-target_link_libraries(slam PRIVATE opencv_core opencv_imgproc opencv_features2d  opencv_highgui g2o::core)
+target_link_libraries(slam PRIVATE opencv_core opencv_imgproc opencv_features2d  opencv_highgui 
+g2o_core 
+g2o_stuff 
+g2o_types_slam3d 
+cholmod)
 
