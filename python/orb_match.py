@@ -39,7 +39,7 @@ matches = sorted(matches, key = lambda x : x.distance)
 # The best matches correspond to the first elements in the sorted matches list, since they are the ones
 # with the shorter distance. We draw the first 30 mathces and use flags = 2 to plot the matching keypoints
 # without size or orientation.
-result = cv2.drawMatches(training_gray, keypoints_train, query_gray, keypoints_query, matches[:300], query_gray, flags = 2)
+result = cv2.drawMatches(training_gray, keypoints_train, query_gray, keypoints_query, matches[:30], query_gray, flags = 2)
 
 # Display the best matching points
 plt.title('Best Matching Points')
