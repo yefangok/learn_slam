@@ -24,9 +24,18 @@ find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenCV CONFIG REQUIRED)
 find_package(g2o REQUIRED)
 
-target_link_libraries(slam PRIVATE opencv_core opencv_imgproc opencv_features2d  opencv_highgui 
-g2o_core 
-g2o_stuff 
-g2o_types_slam3d 
-cholmod)
+target_link_libraries(slam PRIVATE 
+    opencv_core 
+    opencv_imgproc 
+    opencv_features2d  
+    opencv_highgui 
+    g2o_core 
+    g2o_stuff 
+    g2o_types_slam3d 
+    g2o_types_sba  
+    g2o_csparse_extension 
+    g2o_solver_csparse
+    g2o_solver_cholmod
+    cholmod
+)
 
