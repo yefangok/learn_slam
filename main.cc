@@ -55,10 +55,10 @@ bool match_keypoint(const cv::Mat& img1,const cv::Mat& img2,vector<cv::Point2f>&
         cv::drawMatches(img11,keypoints_1,img22,keypoints_2,matches2,output_img, 
                             Scalar_<double>::all(-1), Scalar_<double>::all(-1),std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
         cv::imshow("fuck",output_img);
-        for(const auto& mm:matches2)
-        {
-            std::cout<<mm.distance<<std::endl;
-        }
+        //for(const auto& mm:matches2)
+        //{
+        //    std::cout<<mm.distance<<std::endl;
+        //}
         cv::waitKey(0);
     }
     return true;
@@ -69,10 +69,7 @@ int main(int, char**) {
     cv::Mat img1 = cv::imread("../1.png");
     cv::Mat img2 = cv::imread("../2.png");
     vector<cv::Point2f> points1,points2;
-    match_keypoint(img1,img2,points1,points2,30,true);
-
-
-
+    match_keypoint(img1,img2,points1,points2,300,true);
 
     g2o::SparseOptimizer optimizer;
         // 使用Cholmod中的线性方程求解器
@@ -112,18 +109,17 @@ int main(int, char**) {
         v->setId( 2 + i );
         // 由于深度不知道，只能把深度设置为1了
         double z = 1;
-        double x = ( points1[i].x - cx ) * z / fx; 
-        double y = ( points1[i].y - cy ) * z / fy; 
+        double x = (points1[i].x - cx) * z / fx;
+        double y = (points1[i].y - cy) * z / fy;
         v->setMarginalized(true);
-        v->setEstimate( Eigen::Vector3d(x,y,z) );
-        optimizer.addVertex( v );
+        v->setEstimate(Eigen::Vector3d(x,y,z));
+        optimizer.addVertex(v);
     }
 
     // 准备相机参数
     g2o::CameraParameters* camera = new g2o::CameraParameters( fx, Eigen::Vector2d(cx, cy), 0 );
     camera->setId(0);
-    optimizer.addParameter( camera );
-
+    optimizer.addParameter(camera);
     // 准备边
     // 第一帧
     vector<g2o::EdgeProjectXYZ2UV*> edges;
@@ -132,8 +128,8 @@ int main(int, char**) {
         g2o::EdgeProjectXYZ2UV*  edge = new g2o::EdgeProjectXYZ2UV();
         edge->setVertex( 0, dynamic_cast<g2o::VertexPointXYZ*>   (optimizer.vertex(i+2)) );
         edge->setVertex( 1, dynamic_cast<g2o::VertexSE3Expmap*>     (optimizer.vertex(0)) );
-        edge->setMeasurement( Eigen::Vector2d(points1[i].x, points1[i].y ) );
-         edge->setInformation( Eigen::Matrix2d::Identity() );
+        edge->setMeasurement(Eigen::Vector2d(points1[i].x, points1[i].y ) );
+        edge->setInformation( Eigen::Matrix2d::Identity() );
         edge->setParameterId(0, 0);
         // 核函数
         edge->setRobustKernel( new g2o::RobustKernelHuber() );
@@ -150,8 +146,51 @@ int main(int, char**) {
         edge->setInformation( Eigen::Matrix2d::Identity() );
         edge->setParameterId(0,0);
         // 核函数
-        edge->setRobustKernel( new g2o::RobustKernelHuber() );
+        edge->setRobustKernel(new g2o::RobustKernelHuber());
         optimizer.addEdge( edge );
         edges.push_back(edge);
     }
+
+    cout<<"开始优化"<<endl;
+    //optimizer.setVerbose(true);
+    optimizer.initializeOptimization();
+    optimizer.optimize(100);
+    cout<<"优化完毕"<<endl;
+    
+    //我们比较关心两帧之间的变换矩阵
+    g2o::VertexSE3Expmap* v = dynamic_cast<g2o::VertexSE3Expmap*>( optimizer.vertex(1) );
+    Eigen::Isometry3d pose = v->estimate();
+    cout<<"Pose="<<endl<<pose.matrix()<<endl;
+    
+    /*
+    // 以及所有特征点的位置
+    for ( size_t i=0; i<points1.size(); i++ )
+    {
+        g2o::VertexPointXYZ* v = dynamic_cast<g2o::VertexPointXYZ*> (optimizer.vertex(i+2));
+        cout<<"vertex id "<<i+2<<", pos = ";
+        Eigen::Vector3d pos = v->estimate();
+        cout<<pos(0)<<","<<pos(1)<<","<<pos(2)<<endl;
+    }
+    */
+    
+    // 估计inlier的个数
+    int inliers = 0;
+    for ( auto e:edges )
+    {
+        e->computeError();
+        // chi2 就是 error*\Omega*error, 如果这个数很大，说明此边的值与其他边很不相符
+        if ( e->chi2() > 1 )
+        {
+            //cout<<"error = "<<e->chi2()<<endl;
+        }
+        else 
+        {
+            inliers++;
+        }
+    }
+    
+    cout<<"inliers in total points: "<<inliers<<"/"<<points1.size()+points2.size()<<endl;
+    optimizer.save("ba.g2o");
+    return 0;
+
 }
